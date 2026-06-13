@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SegSmart — MBA Data-X Presentation</title>
+<style>
+  /* ── CSS reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0f2444; font-family: 'Segoe UI', Calibri, sans-serif; font-size: 28px; }
+
+  /* ── Design tokens ── */
+  :root {
+    --navy:    #0f2444;
+    --navy2:   #1a375e;
+    --teal:    #00c4a7;
+    --teal2:   #009c84;
+    --orange:  #ff6b35;
+    --purple:  #7c3aed;
+    --green:   #066b43;
+    --rust:    #92400e;
+    --off:     #f5f7fa;
+    --mid:     #94a3b8;
+    --dark:    #1e293b;
+    --dark2:   #475569;
+  }
+
+  /* ══════════════════════════════════════════════
+     PRESENTATION ENGINE
+  ══════════════════════════════════════════════ */
+
+  /* Each slide occupies the full viewport */
+  section.slide {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    padding: 14px 20px;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    /* flex helpers for dark centered slides */
+    display: flex;
+    flex-direction: column;
+  }
+
+  section.slide.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Progress bar */
+  #progress-bar {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: var(--teal);
+    transition: width 0.35s ease;
+    z-index: 1000;
+  }
+
+  /* Slide counter */
+  #slide-counter {
+    position: fixed;
+    top: 8px; right: 14px;
+    color: var(--mid);
+    font-size: 0.5em;
+    z-index: 1000;
+    background: transparent;
+    font-family: 'Segoe UI', Calibri, sans-serif;
+    pointer-events: none;
+  }
+
+  /* ── Slide backgrounds ── */
+  section.dark-slide { background: var(--navy); }
+  section.light-slide { background: #fff; color: var(--dark); }
+
+  /* ── Title bar on light slides ── */
+  .slide-title {
+    background: var(--navy);
+    color: #fff;
+    margin: -14px -20px 12px -20px;
+    padding: 10px 20px;
+    font-size: 1.05em;
+    font-weight: 700;
+    border-left: 6px solid var(--teal);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* ── Cards / boxes ── */
+  .card {
+    background: var(--off);
+    border-radius: 6px;
+    overflow: hidden;
+    height: 100%;
+  }
+  .card-head {
+    padding: 6px 12px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.72em;
+    border-left: 5px solid rgba(255,255,255,0.3);
+  }
+  .card-body {
+    padding: 7px 12px 8px;
+    font-size: 0.62em;
+    color: var(--dark2);
+    line-height: 1.45;
+  }
+  .card-body li { margin-bottom: 2px; }
+
+  /* ── Grid layouts ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid-2x3 { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; }
+
+  /* ── Step rows (journey) ── */
+  .step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .step-num {
+    min-width: 32px; height: 32px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1em; color: #fff; flex-shrink: 0;
+  }
+  .step-content { flex: 1; }
+  .step-title { font-weight: 700; font-size: 0.74em; color: var(--dark); margin-bottom: 2px; }
+  .step-desc { font-size: 0.62em; color: var(--dark2); line-height: 1.4; }
+
+  /* ── Metric strip ── */
+  .metric-strip { display: flex; gap: 0; background: var(--navy); border-radius: 6px; overflow: hidden; }
+  .metric { flex: 1; padding: 8px 12px; border-right: 1px solid rgba(255,255,255,0.1); }
+  .metric:last-child { border-right: none; }
+  .metric-label { color: var(--teal); font-weight: 700; font-size: 0.6em; margin-bottom: 3px; }
+  .metric-val { color: #fff; font-size: 0.62em; line-height: 1.4; }
+
+  /* ── Table ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.6em; }
+  .data-table th { background: var(--navy); color: #fff; padding: 5px 8px; text-align: left; font-weight: 600; }
+  .data-table td { padding: 5px 8px; border-bottom: 1px solid #e2e8f0; }
+  .data-table tr:nth-child(even) td { background: var(--off); }
+  .data-table .mono { font-family: monospace; font-size: 0.95em; color: var(--navy); font-weight: 600; }
+  .data-table .tag { font-style: italic; color: var(--dark2); }
+
+  /* ── Algo comparison table ── */
+  .algo-table { width: 100%; border-collapse: collapse; font-size: 0.65em; }
+  .algo-table th { padding: 7px 12px; text-align: left; font-weight: 700; font-size: 0.95em; }
+  .algo-table td { padding: 6px 12px; border-bottom: 1px solid #e2e8f0; }
+  .algo-table tr:nth-child(even) td { background: var(--off); }
+  .algo-table .key { font-weight: 700; }
+
+  /* ── Segment table ── */
+  .seg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+
+  /* ── Label chips ── */
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.58em; font-weight: 700; margin-right: 4px; }
+
+  /* ── Code block ── */
+  .code-box {
+    background: #0f172a; color: #94a3b8; font-family: monospace;
+    font-size: 0.57em; padding: 7px 12px; border-radius: 6px;
+    border-left: 3px solid var(--teal); line-height: 1.6;
+  }
+  .code-box .kw { color: var(--teal); }
+  .code-box .cm { color: #475569; }
+
+  /* ── Alert box ── */
+  .alert { border-left: 4px solid var(--teal); background: #ecfdf5; padding: 6px 12px; border-radius: 0 6px 6px 0; font-size: 0.6em; color: #066b43; margin-top: 8px; }
+  .alert-warn { border-color: var(--orange); background: #fff7ed; color: var(--rust); }
+
+  /* ── Feature pill list ── */
+  .pill-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .pill { background: var(--navy); color: var(--teal); padding: 2px 8px; border-radius: 12px; font-size: 0.58em; font-weight: 600; }
+
+  /* ── Dark slide specifics ── */
+  .dark-slide h1 { color: #fff; font-size: 2.4em; font-weight: 900; margin-bottom: 8px; }
+  .dark-slide .sub { color: var(--teal); font-size: 0.95em; font-weight: 400; }
+  .dark-slide .meta { color: var(--mid); font-size: 0.65em; margin-top: 8px; }
+  .dark-slide .tl { position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: var(--teal); }
+  .dark-slide .footer-bar { position: absolute; bottom: 0; left: 0; right: 0; background: var(--navy2); padding: 8px 24px; font-size: 0.58em; color: var(--teal); }
+
+  /* ── Global typography helpers ── */
+  p { margin: 0 0 8px; }
+  ul { margin: 0; padding-left: 18px; }
+  li { margin: 0; }
+  .light-slide h2, .light-slide h3 { color: var(--dark); }
+  .subtitle { font-size: 0.67em; color: var(--dark2); margin: -4px 0 10px; }
+  a { color: var(--teal); }
+
+  /* ── Horizons ── */
+  .horizon { margin-bottom: 8px; border-radius: 6px; overflow: hidden; }
+  .horizon-head { padding: 5px 12px; color: #fff; font-weight: 700; font-size: 0.67em; }
+  .horizon-body { padding: 5px 12px 6px; font-size: 0.6em; color: var(--dark2); line-height: 1.4; }
+  .horizon-body li { margin-bottom: 2px; }
+
+  /* ── Validation block ── */
+  .val-block { border-radius: 6px; overflow: hidden; margin-bottom: 7px; }
+  .val-head { padding: 5px 12px; color: #fff; font-weight: 700; font-size: 0.67em; }
+  .val-body { background: var(--off); padding: 5px 12px 6px; font-size: 0.6em; color: var(--dark2); line-height: 1.4; }
+  .val-body li { margin-bottom: 2px; }
+
+  /* ── Canon row highlight ── */
+  .req { color: var(--teal2); font-weight: 700; }
+
+  /* dark-slide centering helper for non-flex children */
+  section.dark-slide.centered {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Slide counter & progress bar (managed by JS) -->
+<div id="slide-counter">1 / 15</div>
+<div id="progress-bar" style="width:6.67%"></div>
+
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 1 — TITLE -->
+<section class="slide dark-slide" style="text-align:center; justify-content:center; align-items:center;">
+  <div class="tl"></div>
+  <h1 style="margin-bottom:12px;">SegSmart</h1>
+  <p class="sub" style="font-size:1.05em; font-weight:600;">Customer Segmentation Platform for SMEs</p>
+  <p class="meta">Local-first &nbsp;·&nbsp; RFM + KMeans &nbsp;·&nbsp; On-device AI &nbsp;·&nbsp; MBA Data-X Project 2026</p>
+  <p style="color:var(--mid); font-size:0.6em; margin-top:18px; letter-spacing:0.03em;">
+    Anna Marešová &nbsp;·&nbsp; Miroslav Kolařík &nbsp;·&nbsp; Matej Vereš &nbsp;·&nbsp; Jan Bolek &nbsp;·&nbsp; Štěpán Mikeš
+  </p>
+  <div style="margin-top:16px; display:inline-block;">
+    <a href="https://github.com/Anicka-net/segsmart" style="color:var(--teal); font-size:0.65em; text-decoration:none;">
+      ⬡ github.com/Anicka-net/segsmart
+    </a>
+  </div>
+  <div class="footer-bar">Enterprise-grade customer intelligence — on your own machine.</div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 2 — PROBLEM -->
+<section class="slide light-slide">
+  <div class="slide-title">Problem Statement</div>
+  <p style="font-size:0.9em; font-weight:700; color:var(--navy); margin-bottom:6px;">SMEs are left out of customer intelligence.</p>
+  <p class="subtitle">Enterprise segmentation tools exist — but SMEs can't afford them, lack data teams, and can't risk shipping customer data to someone else's cloud.</p>
+  <div class="grid-3" style="margin-top:4px;">
+    <div class="card">
+      <div class="card-head" style="background:var(--navy);">💸&nbsp; Cost Barrier</div>
+      <div class="card-body"><ul>
+        <li>Bloomreach: $19k–$250k/yr</li>
+        <li>Samba.ai: custom quote, enterprise</li>
+        <li>Ecomail: email tool, no real segmentation</li>
+        <li>No affordable end-to-end solution for SMEs</li>
+      </ul></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="background:var(--teal2);">🧠&nbsp; Capacity Gap</div>
+      <div class="card-body"><ul>
+        <li>No dedicated data team or analyst</li>
+        <li>No-code tools give raw data, not insight</li>
+        <li>Manual segmentation = outdated &amp; slow</li>
+        <li>Campaign execution decoupled from data</li>
+      </ul></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="background:var(--rust);">🔒&nbsp; Data Sovereignty</div>
+      <div class="card-body"><ul>
+        <li>SaaS requires uploading full customer DB to 3rd-party cloud</li>
+        <li>GDPR liability — requires DPA with every vendor</li>
+        <li>Ongoing vendor lock-in &amp; subscription dependency</li>
+        <li>No control over data retention or processing</li>
+      </ul></div>
+    </div>
+  </div>
+  <div class="alert" style="margin-top:12px;">
+    <strong>The gap:</strong> No existing SME tool combines automatic segmentation + AI campaign drafts + seasonality in one affordable, privacy-safe package.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════ SLIDE 3 — NABC -->
+<section class="slide light-slide">
+  <div class="slide-title">NABC Analysis</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head" style="background:var(--navy);">N — NEED</div>
+      <div class="card-body"><ul>
+        <li>SMEs lack affordable segmentation tools</li>
+        <li>No budget for enterprise tools ($19k+/yr)</li>
+        <li>No analytical capacity or data team</li>
+        <li>GDPR risk from cloud-based SaaS</li>
+        <li>Goal: better retention, upsell &amp; churn prevention</li>
+      </ul></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="background:var(--teal2);">A — APPROACH</div>
+      <div class="card-body"><ul>
+        <li>Local-first Docker container — self-hosted</li>
+        <li>RFM scoring + KMeans cross-validation</li>
+        <li>On-device LLM (Ollama) for campaign copy</li>
+        <li>Seasonality &amp; external factor modelling</li>
+        <li><strong>Data never leaves the customer's server</strong></li>
+      </ul></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="background:var(--green);">B — BENEFIT</div>
+      <div class="card-body"><ul>
+        <li>GDPR by topology — no DPA needed</li>
+        <li>Buy-once pricing, no subscription</li>
+        <li>Enterprise-grade insights at SME cost</li>
+        <li>Higher retention + targeted upsell</li>
+        <li>Human-in-the-loop: owner approves all campaign sends</li>
+      </ul></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="background:var(--rust);">C — COMPETITION</div>
+      <div class="card-body"><ul>
+        <li>Bloomreach: $19–250k/yr, enterprise only</li>
+        <li>Samba.ai: e-commerce only, price hidden</li>
+        <li>Ecomail: email tool, segmentation add-on</li>
+        <li>None offer local-first + AI + seasonality</li>
+        <li><strong>Our moat: "data stays on your machine"</strong></li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════ SLIDE 4 — AGENTIC CANVAS -->
+<section class="slide light-slide">
+  <div class="slide-title">Agentic Canvas — Two On-device AI Agents</div>
+  <p class="subtitle">Both agents run 100% locally via Ollama — no API keys, no data leaves the machine.</p>
+  <div class="grid-2">
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy); border-left-color:var(--teal);">
+        Agent 1 — Column Mapper
+        <span style="float:right; font-weight:400; color:var(--teal);">gemma4:e4b (~4B, fast)</span>
+      </div>
+      <div class="card-body">
+        <table style="width:100%; font-size:1em; border-collapse:collapse;">
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy); width:90px;">Trigger</td><td>User uploads CSV/Excel with unknown columns</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy);">Task</td><td>Reads raw header + sample rows → proposes mapping to canonical schema (<code>customer_id</code>, <code>order_date</code>, <code>unit_price</code>…)</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy);">Guardrails</td><td>Multilingual heuristic fallback if LLM unavailable; human confirms before pipeline runs</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy);">Output</td><td>JSON column mapping saved to <code>config/segsmart.json</code></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy); border-left-color:var(--orange);">
+        Agent 2 — Campaign Copywriter
+        <span style="float:right; font-weight:400; color:var(--orange);">qwen3.6:35b (MoE, quality)</span>
+      </div>
+      <div class="card-body">
+        <table style="width:100%; font-size:1em; border-collapse:collapse;">
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy); width:90px;">Trigger</td><td>Segmentation complete → 5 named segments ready</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy);">Task</td><td>Writes one campaign card per segment: <em>objective, channel, offer, headline, rationale</em></td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy);">Guardrails</td><td>Numbers computed in Python — never by LLM; discounts set by owner only; rule-based fallback always on</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--navy);">Output</td><td>Campaign cards → owner approves → mailing artifact + webhook</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  <div class="alert" style="margin-top:12px;">
+    <strong>Key principle:</strong> LLMs write <em>copy</em>, never <em>commerce</em>. Revenue estimates, discount values, and voucher codes always come from deterministic Python or the shop owner — never from the model.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════ SLIDE 5 — EDA -->
+<section class="slide light-slide">
+  <div class="slide-title">EDA / Data Overview</div>
+  <p class="subtitle">Three data sources fed the project — each revealing something different about the problem.</p>
+
+  <table class="data-table" style="margin-bottom:12px;">
+    <thead>
+      <tr>
+        <th>Source</th><th>Records</th><th>Customers</th><th>Period</th><th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>UCI Online Retail</strong></td>
+        <td>541,909 rows</td><td>4,372 unique</td><td>2010–2011</td>
+        <td>Benchmark / algorithm dev</td>
+      </tr>
+      <tr>
+        <td><strong>Partner e-shop (real)</strong></td>
+        <td>~9k rows</td><td>~250 unique</td><td>Mar–Apr 2024 (2 months)</td>
+        <td>Real-world test</td>
+      </tr>
+      <tr>
+        <td><strong>Synthetic generator</strong></td>
+        <td>~80k rows</td><td>500 archetypes</td><td>20 months synthetic</td>
+        <td>Full demo, rubric validation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-head" style="background:var(--navy);">📊 Key EDA Stats</div>
+      <div class="card-body"><ul>
+        <li>Revenue range: £24 – £8M+ (UCI)</li>
+        <li>Avg order value: ~£17 (UCI benchmark)</li>
+        <li>Countries: 38 (UCI), 1 (real e-shop)</li>
+        <li>Date parsing: EU/US/Excel/Unix all handled</li>
+      </ul></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="background:var(--orange);">⚠️ Short Window Finding</div>
+      <div class="card-body"><ul>
+        <li>2-month real export → ARI ≈ 0.06</li>
+        <li>Everyone has ~1 order → frequency collapses</li>
+        <li>RFM can't segment meaningfully</li>
+        <li><strong>Pipeline warns the user — doesn't fake results</strong></li>
+      </ul></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="background:var(--green);">✓ Synthetic Fix</div>
+      <div class="card-body"><ul>
+        <li>20-month synthetic → ARI 0.49, Silhouette 0.49</li>
+        <li>500 archetypes with Czech seasonality</li>
+        <li>Champions/Loyal/B2B/New/At-risk/Dormant</li>
+        <li>Real-vs-synthetic contrast = key project finding</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ SLIDE 6 — DATA TRANSFORMATION -->
+<section class="slide light-slide">
+  <div class="slide-title">Data Transformation — The Canonical Frame</div>
+  <p class="subtitle">Every source funnels into one schema. Adding a data source = write a mapping, not new analytics code.</p>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Column</th><th>Type</th><th>Required?</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">customer_id</td><td class="tag">str</td><td><span style="color:var(--teal2); font-weight:700;">✓ required</span></td><td>Email, hash, or phone — anything that identifies the buyer</td></tr>
+      <tr><td class="mono">order_date</td><td class="tag">datetime</td><td><span style="color:var(--teal2); font-weight:700;">✓ required</span></td><td>EU/US autodetected; Excel serials; unix epochs handled</td></tr>
+      <tr><td class="mono">line_value / unit_price</td><td class="tag">float</td><td><span style="color:var(--teal2); font-weight:700;">✓ one of</span></td><td>Export total wins over qty×price when both present</td></tr>
+      <tr><td class="mono">order_id</td><td class="tag">str</td><td style="color:var(--mid);">optional</td><td>Synthesized (customer+day) when export has none</td></tr>
+      <tr><td class="mono">quantity</td><td class="tag">float</td><td style="color:var(--mid);">optional</td><td>Defaults to 1.0 when absent</td></tr>
+      <tr><td class="mono">product</td><td class="tag">str</td><td style="color:var(--mid);">optional</td><td>Coupons/gifts flagged &amp; excluded from diversity counts</td></tr>
+      <tr><td class="mono">country</td><td class="tag">str</td><td style="color:var(--mid);">optional</td><td>Passthrough for analytics</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert" style="margin-top:10px;">
+    <strong>Robustness contract (sniff.py):</strong> UTF-8 / cp1250 / latin-1, any delimiter (<code>, ; tab |</code>), Czech decimal comma, preamble junk, duplicate headers, <code>.xlsx</code>/<code>.xls</code>.
+    12 hostile fixtures in <code>tests/test_messy.py</code> — all must converge to identical numbers.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ SLIDE 7 — FEATURE ENGINEERING -->
+<section class="slide light-slide">
+  <div class="slide-title">Feature Engineering &nbsp;<span style="font-size:0.7em; font-weight:400; color:var(--mid);">seg/features.py</span></div>
+  <p class="subtitle">Per-customer features collapse transaction history into a segmentation-ready matrix.</p>
+  <div class="grid-2">
+
+    <div>
+      <div class="card" style="margin-bottom:10px;">
+        <div class="card-head" style="background:var(--navy); border-left-color:var(--teal);">RFM Core Features</div>
+        <div class="card-body">
+          <table style="width:100%; border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 0; font-weight:700; color:var(--teal2); width:130px;">Recency</td>
+              <td>Days since last order <em>(snapshot − last_seen)</em></td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0; font-weight:700; color:var(--teal2);">Frequency</td>
+              <td>Count of unique orders per customer</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0; font-weight:700; color:var(--teal2);">Monetary</td>
+              <td>Total lifetime spend (sum of <code>line_value</code>)</td>
+            </tr>
+          </table>
+          <div style="margin-top:6px; font-size:0.85em; color:var(--mid); font-style:italic;">
+            → Quintile-scored 1–5, tie-aware &nbsp;|&nbsp; R score reversed (recent = 5)
+          </div>
+        </div>
+      </div>
+
+      <div class="code-box">
+        <span class="kw">def</span> _score(series, reverse=<span class="kw">False</span>):<br>
+        &nbsp;&nbsp;<span class="cm"># tie-aware: equal values → same score</span><br>
+        &nbsp;&nbsp;pct = series.rank(pct=<span class="kw">True</span>, method=<span style="color:#f59e0b">"average"</span>)<br>
+        &nbsp;&nbsp;q = np.ceil(pct * 5).clip(1, 5)<br>
+        &nbsp;&nbsp;<span class="kw">return</span> (6 - q) <span class="kw">if</span> reverse <span class="kw">else</span> q
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy2); border-left-color:var(--orange);">Behavioral Features (for KMeans)</div>
+      <div class="card-body">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange); width:150px;">avg_order_value</td><td>Mean spend per order</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">avg_basket_items</td><td>Avg items per basket (product lines only)</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">tenure_days</td><td>Days from first to last order</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">distinct_products</td><td>Unique products purchased</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">interpurchase_days</td><td>Avg gap between consecutive orders</td></tr>
+        </table>
+        <div style="margin-top:10px; padding-top:8px; border-top:1px solid #e2e8f0;">
+          <div style="font-weight:700; font-size:0.85em; color:var(--dark); margin-bottom:4px;">Preprocessing for KMeans:</div>
+          <div style="font-size:0.85em; color:var(--dark2);">
+            log1p on skewed cols (frequency, monetary, AOV…)<br>
+            → StandardScaler z-score normalization<br>
+            → NaN filled with column median
+          </div>
+        </div>
+        <div class="pill-list">
+          <span class="pill">recency</span><span class="pill">frequency</span><span class="pill">monetary</span>
+          <span class="pill">avg_order_value</span><span class="pill">avg_basket_items</span><span class="pill">distinct_products</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════ SLIDE 8 — JOURNEY -->
+<section class="slide light-slide">
+  <div class="slide-title">Journey &amp; Key Trials</div>
+
+  <div class="step">
+    <div class="step-num" style="background:var(--teal);">1</div>
+    <div class="step-content">
+      <div class="step-title">Short real export → flat results</div>
+      <div class="step-desc">Real 2-month e-shop export: ARI ≈ 0.06, silhouette ≈ 0.04. RFM collapsed — everyone had ~1 order. Frequency and monetary were near-identical across all customers. Pipeline correctly warned us instead of inventing segments. <strong>Finding: data window matters as much as the algorithm.</strong></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num" style="background:var(--orange);">2</div>
+    <div class="step-content">
+      <div class="step-title">Synthetic data breakthrough</div>
+      <div class="step-desc">Built <code>gen/synth.py</code> — 500 customer archetypes (Champion, Loyal, B2B, New, At-risk, Dormant), 20-month window, Czech seasonality, Christmas peak. Result: silhouette 0.49, ARI 0.49. Real-vs-synthetic contrast became a key finding: <strong>you need history, not just data.</strong></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num" style="background:var(--navy);">3</div>
+    <div class="step-content">
+      <div class="step-title">LLM hallucinated discount codes</div>
+      <div class="step-desc">qwen3 invented voucher codes ("JARO15", "SAVE20") and specific % discounts that no real shop accepted. Solution: prompt guardrails + <code>strip_voucher_codes()</code> regex + <code>has_invented_discount()</code> fallback to rule-based copy. <strong>Trust but verify — all model output is sanitized.</strong></div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num" style="background:var(--purple);">4</div>
+    <div class="step-content">
+      <div class="step-title">Data ingestion chaos</div>
+      <div class="step-desc">Real e-shop CSV: Czech decimal comma, billing/shipping structural rows, cancelled orders, missing order IDs, cp1250 encoding. Each case explicitly handled in <code>loader.py</code>. <strong>Contract enforced: 12 hostile test fixtures must all produce identical output.</strong></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════ SLIDE 9 — AI TOOLS -->
+<section class="slide light-slide">
+  <div class="slide-title">AI Tools Utilized</div>
+  <div class="grid-2x3">
+
+    <div class="card">
+      <div class="card-head" style="background:var(--teal2);">Ollama</div>
+      <div class="card-body"><ul>
+        <li>Local LLM runtime — zero network inference</li>
+        <li>Docker Compose sidecar service</li>
+        <li>Hot-swap models without code changes</li>
+        <li>GPU optional (CPU works, slower)</li>
+      </ul></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:#0678d4;">gemma4:e4b (~4B)</div>
+      <div class="card-body"><ul>
+        <li>Fast agent — interactive column mapping</li>
+        <li>Quick campaign card drafts</li>
+        <li>CPU-feasible inference speed</li>
+        <li>Default model for most interactions</li>
+      </ul></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--purple);">qwen3.6:35b MoE</div>
+      <div class="card-body"><ul>
+        <li>Quality Czech marketing copy</li>
+        <li>Reasoning mode (think channel) enabled</li>
+        <li>Batch / background use only</li>
+        <li>Sanitized via strip_voucher_codes()</li>
+      </ul></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--orange);">Claude (dev tool)</div>
+      <div class="card-body"><ul>
+        <li>Used during development via Claude Code</li>
+        <li>CLAUDE.md + AGENTS.md define agent rules</li>
+        <li>Not part of the deployed product</li>
+        <li>Helped build test suite &amp; architecture</li>
+      </ul></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--green);">sklearn (Python)</div>
+      <div class="card-body"><ul>
+        <li>KMeans clustering</li>
+        <li>StandardScaler normalization</li>
+        <li>Silhouette score</li>
+        <li>Adjusted Rand Index (ARI)</li>
+      </ul></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy2);">Deterministic Safety</div>
+      <div class="card-body"><ul>
+        <li>Revenue impact always Python-computed</li>
+        <li>Rule-based fallback for all LLM calls</li>
+        <li>has_invented_discount() scrubs hallucinations</li>
+        <li>All numbers printed on card, never model's</li>
+      </ul></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════ SLIDE 10 — MODELS -->
+<section class="slide light-slide">
+  <div class="slide-title">Models &amp; Algorithms</div>
+  <p class="subtitle">Two complementary algorithms — interpretability vs. discovery — validated by their agreement.</p>
+  <div class="grid-2" style="margin-bottom:12px;">
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy); border-left-color:var(--teal);">① RFM Quantile Scoring</div>
+      <div class="card-body">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--teal2); width:90px;">Role</td><td>Primary segmentation — the product's default</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--teal2);">Method</td><td>Quintile scoring (1–5) on R, F, M independently</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--teal2);">Tie-aware</td><td>Equal values always get same score (rank pct)</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--teal2);">Output</td><td>5 named: Champions, Loyal, At-risk, New, Dormant</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--teal2);">Strength</td><td>Interpretable — owner can read WHY a customer is "At-risk"</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--teal2);">Weakness</td><td>Pre-defined thresholds, may miss real cluster geometry</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy); border-left-color:var(--orange);">② KMeans Clustering</div>
+      <div class="card-body">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange); width:90px;">Role</td><td>Unsupervised cross-check of RFM results</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">Method</td><td>KMeans k=5 on log-scaled, z-scored features</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">Features</td><td>recency, frequency, monetary, AOV, basket, products</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">Adapts</td><td>k auto-reduced for small datasets (k &lt; n)</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">Strength</td><td>Finds real geometry in data, no pre-set assumptions</td></tr>
+          <tr><td style="padding:3px 0; font-weight:700; color:var(--orange);">Weakness</td><td>Labels meaningless without RFM interpretation layer</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="metric-strip">
+    <div class="metric">
+      <div class="metric-label">Silhouette Score</div>
+      <div class="metric-val">KMeans internal quality<br>0.49 (synthetic) · 0.04 (2m real)</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Adjusted Rand Index</div>
+      <div class="metric-val">RFM vs KMeans agreement<br>0.49 (synthetic) · 0.06 (2m real)</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Honesty Rule</div>
+      <div class="metric-val">ARI ≈ 0 → automatic warning<br>"data window too short"</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════ SLIDE 11 — RESULTS + PROTOTYPE -->
+<section class="slide light-slide">
+  <div class="slide-title">Results · Demo · Working Prototype</div>
+  <p class="subtitle">Fully deployable Docker container — dashboard live with synthetic data, one command: <code>docker compose up</code></p>
+
+  <div class="grid-2">
+    <div>
+      <table class="data-table" style="margin-bottom:10px;">
+        <thead>
+          <tr><th>Segment</th><th>% Cust.</th><th>% Rev.</th><th>Profile</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="seg-dot" style="background:var(--teal);"></span><strong style="color:var(--teal);">Champions</strong></td>
+            <td>18%</td><td>37%</td><td><em>Recent · frequent · high-spend</em></td>
+          </tr>
+          <tr>
+            <td><span class="seg-dot" style="background:#0678d4;"></span><strong style="color:#0678d4;">Loyal</strong></td>
+            <td>24%</td><td>28%</td><td><em>Frequent or high-spend, still active</em></td>
+          </tr>
+          <tr>
+            <td><span class="seg-dot" style="background:var(--green);"></span><strong style="color:var(--green);">New</strong></td>
+            <td>22%</td><td>12%</td><td><em>Recent, few orders, short tenure</em></td>
+          </tr>
+          <tr>
+            <td><span class="seg-dot" style="background:var(--orange);"></span><strong style="color:var(--orange);">At-risk</strong></td>
+            <td>21%</td><td>18%</td><td><em>Lapsed but previously valuable</em></td>
+          </tr>
+          <tr>
+            <td><span class="seg-dot" style="background:var(--mid);"></span><strong style="color:var(--mid);">Dormant</strong></td>
+            <td>15%</td><td>5%</td><td><em>Lapsed and low value</em></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="alert">
+        Campaign response rates: Champions 25% · New 20% · Loyal 15% · At-risk 8% · Dormant 4%
+        — deterministic, printed on card, never hallucinated.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy2);">✓ Prototype Features</div>
+      <div class="card-body"><ul style="columns:1; line-height:1.6;">
+        <li>Dashboard: donut chart + revenue bars</li>
+        <li>Segment drill-down → customer list → CSV export</li>
+        <li>AI campaign cards per segment</li>
+        <li>Owner adds real discount → copy regenerates</li>
+        <li>Launch → mailing artifact + webhook</li>
+        <li>Seasonality peak detection</li>
+        <li>Segment migration tracking</li>
+        <li>Bilingual UI: EN / CS toggle</li>
+        <li>docker compose up → live in 1 command</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════ SLIDE 12 — VALIDATION -->
+<section class="slide light-slide">
+  <div class="slide-title">Validation of Results</div>
+  <p class="subtitle">Multi-layered validation: statistical metrics, data honesty checks, and executable tests.</p>
+
+  <div class="val-block">
+    <div class="val-head" style="background:var(--teal2);">Statistical Metrics</div>
+    <div class="val-body"><ul>
+      <li><strong>Silhouette Score:</strong> 0.49 on 20-month synthetic (good cluster separation) · 0.04 on 2-month real (system warns)</li>
+      <li><strong>Adjusted Rand Index (RFM ↔ KMeans):</strong> 0.49 synthetic / 0.06 real — the honesty metric shown on dashboard</li>
+      <li>Segment profiles: customers %, revenue % per segment — deterministic, reproducible</li>
+    </ul></div>
+  </div>
+
+  <div class="val-block">
+    <div class="val-head" style="background:var(--navy);">Data Honesty Layer</div>
+    <div class="val-body"><ul>
+      <li><strong>Ingest report:</strong> rows kept / dropped per category (date parse fails, missing customer, cancellations, non-positive prices)</li>
+      <li><strong>Quality warnings auto-triggered:</strong> window &lt; 6 months · median price &lt; 1 (wrong decimal) · &lt; 50 customers · ARI ≈ 0</li>
+      <li>Impact estimates always deterministic Python (response-rate table), never LLM-generated</li>
+    </ul></div>
+  </div>
+
+  <div class="val-block">
+    <div class="val-head" style="background:var(--orange);">Test Suite — ~115 pytest cases, all offline</div>
+    <div class="val-body"><ul>
+      <li><strong>tests/test_messy.py:</strong> 12 hostile CSV formats (cp1250, BOM, no order IDs, Excel serials, ambiguous dates…) → must all produce identical numbers</li>
+      <li><strong>tests/test_no_pii.py:</strong> SHA-256 denylist of personal names, e-mail patterns, private artifacts never git-tracked</li>
+      <li>Regression tests: tie-aware scoring, C-invoice rule, auth, read-only guards</li>
+      <li>CI runs full suite on every push; Docker image published on version tags</li>
+    </ul></div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════ SLIDE 13 — IMPROVEMENT -->
+<section class="slide light-slide">
+  <div class="slide-title">Areas of Improvement</div>
+  <p class="subtitle">Honest assessment of what the current alpha does not yet do well.</p>
+  <div class="grid-2">
+
+    <div class="card">
+      <div class="card-head" style="background:var(--teal2);">Prediction vs. Description</div>
+      <div class="card-body">The tool is purely descriptive (RFM) + cross-validated (KMeans). No churn/propensity model predicts which customers will leave next. Adding a supervised churn predictor per segment is the highest-value next ML step.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--orange);">Short Data Window Problem</div>
+      <div class="card-body">2 months of real data = meaningless segmentation (ARI 0.06). The system warns — but SMEs with new shops have no fix. Future: cold-start heuristics, cohort-based approach for short histories.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--navy);">LLM Output Quality</div>
+      <div class="card-body">Despite guardrails, qwen3.6 occasionally produces generic copy. Prompt engineering, fine-tuning on e-commerce data, or few-shot examples from real campaigns would significantly improve output quality.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--purple);">No A/B Testing Loop</div>
+      <div class="card-body">Campaign impact estimates use a static response-rate table. No feedback loop from actual open/click rates back into the model to calibrate estimates over time.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:var(--rust);">Margin-Blind Segmentation</div>
+      <div class="card-body">Segmentation is revenue-based, not profit-based. Heavy discount users appear as Champions. Margin data from ERP/accounting would fix this — but most SMEs don't export it.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="background:#475569;">Single-server Scale Limits</div>
+      <div class="card-body">stdlib HTTP + synchronous pipeline. Slow quality-model run blocks the dashboard. No background job queue, no horizontal scaling. Appropriate for one SME, not a multi-tenant product.</div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════ SLIDE 14 — NEXT STEPS -->
+<section class="slide light-slide">
+  <div class="slide-title">Next Steps</div>
+  <p class="subtitle">Three horizons: short-term polish → medium-term ML expansion → long-term productisation.</p>
+
+  <div class="horizon">
+    <div class="horizon-head" style="background:var(--teal2);">Short-term (1–3 months)</div>
+    <div class="horizon-body"><ul>
+      <li>Scheduled refresh (cron/systemd → <code>pipeline.py --config</code>)</li>
+      <li>BigQuery &amp; Shoptet connectors hardened for live tenants</li>
+      <li>Background job queue — quality model doesn't block HTTP</li>
+      <li>Native ESP integrations (Ecomail / SmartEmailing / Mailchimp)</li>
+    </ul></div>
+  </div>
+
+  <div class="horizon">
+    <div class="horizon-head" style="background:var(--orange);">Medium-term (3–9 months)</div>
+    <div class="horizon-body"><ul>
+      <li>Churn / propensity model per segment</li>
+      <li>Margin-aware segmentation (profit not revenue)</li>
+      <li>A/B testing engine — split offers across sub-groups</li>
+      <li>Managed SaaS option with zero-knowledge architecture</li>
+    </ul></div>
+  </div>
+
+  <div class="horizon">
+    <div class="horizon-head" style="background:var(--navy);">Long-term (9+ months)</div>
+    <div class="horizon-body"><ul>
+      <li>CLV (Customer Lifetime Value) prediction model</li>
+      <li>Attribution modelling — link campaigns to revenue lift</li>
+      <li>Multi-shop / franchise mode with PII separation</li>
+      <li>Open ecosystem: connector SDK + community adapters</li>
+    </ul></div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════ SLIDE 15 — THANK YOU -->
+<section class="slide dark-slide" style="text-align:center; justify-content:center; align-items:center;">
+  <div class="tl"></div>
+  <h1 style="font-size:2.2em; margin-bottom:10px;">Thank You</h1>
+  <p class="sub" style="font-size:0.9em;">Enterprise-grade customer intelligence — on your own machine.</p>
+  <div style="margin-top:28px; display:inline-flex; flex-direction:column; align-items:center; gap:10px;">
+    <a href="https://github.com/Anicka-net/segsmart"
+       style="background:var(--navy2); color:var(--teal); padding:8px 24px; border-radius:6px; font-size:0.7em; text-decoration:none; font-weight:600;">
+      ⬡ &nbsp;github.com/Anicka-net/segsmart
+    </a>
+    <span style="color:var(--mid); font-size:0.6em; font-style:italic;">docker compose up → http://localhost:8099</span>
+  </div>
+  <p style="margin-top:40px; color:var(--mid); font-size:0.55em;">MBA Data-X Project 2026 &nbsp;·&nbsp; MIT License</p>
+  <div class="footer-bar">15 slides &nbsp;|&nbsp; Press ← → to navigate &nbsp;|&nbsp; F for fullscreen</div>
+</section>
+
+
+<script>
+(function () {
+  'use strict';
+
+  var slides = Array.from(document.querySelectorAll('section.slide'));
+  var total  = slides.length;
+  var current = 0;
+
+  var counter = document.getElementById('slide-counter');
+  var bar     = document.getElementById('progress-bar');
+
+  function show(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= total) idx = total - 1;
+    slides[current].classList.remove('active');
+    current = idx;
+    slides[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + total;
+    bar.style.width = ((current + 1) / total * 100).toFixed(2) + '%';
+  }
+
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function (e) {
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+      case 'PageDown':
+      case ' ':
+        e.preventDefault();
+        next();
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+      case 'PageUp':
+        e.preventDefault();
+        prev();
+        break;
+      case 'f':
+      case 'F':
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function(){});
+        } else {
+          document.exitFullscreen().catch(function(){});
+        }
+        break;
+    }
+  });
+
+  // Click left half = prev, right half = next
+  document.addEventListener('click', function (e) {
+    // Don't navigate when clicking links
+    if (e.target.closest('a')) return;
+    if (e.clientX < window.innerWidth / 2) {
+      prev();
+    } else {
+      next();
+    }
+  });
+
+  // Initialise: show first slide
+  show(0);
+})();
+</script>
+</body>
+</html>
