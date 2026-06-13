@@ -14,6 +14,11 @@ MODEL = os.environ.get("SEG_LLM_MODEL", "gemma4:e4b")
 _STOP = {"a", "an", "the", "and", "or", "for", "of", "in", "with", "to",
          "na", "pro", "ke", "ve", "ze", "se", "do", "od", "po"}
 
+# catalog category columns — used directly as the category label (no LLM needed)
+_CAT_COLS = ["cat_2_name", "cat_1_name"]
+# description columns fed to LLM/heuristic when no ready-made category exists
+_DESC_CANDIDATES = ["product_name", "product_desc", "description"]
+
 
 def _heuristic_category(name: str) -> str:
     """First meaningful word from a product name as its category label."""
@@ -77,7 +82,13 @@ def assign_categories(df: pd.DataFrame, use_llm: bool = True,
     if "category" in df.columns:
         return df["category"].astype(str).replace({"": "Other", "nan": "Other"})
 
-    products = df["product"].astype(str)
+    # catalog provides a ready-made category — no LLM/heuristic needed
+    cat_col = next((c for c in _CAT_COLS if c in df.columns), None)
+    if cat_col:
+        return df[cat_col].astype(str).replace({"": "Other", "nan": "Other"})
+
+    desc_col = next((c for c in _DESC_CANDIDATES if c in df.columns), "product")
+    products = df[desc_col].astype(str)
     unique = [p for p in products.unique() if p and p != "nan"]
 
     mapping: dict[str, str] = {}

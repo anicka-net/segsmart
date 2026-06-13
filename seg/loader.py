@@ -26,7 +26,11 @@ CANON = ["customer_id", "order_id", "order_date",
 CONTACT = ["customer_email", "customer_name"]
 # optional analytics passthrough — category is used by the product-mix chart;
 # when the source provides it directly, _finalize passes it through unchanged
-_PASSTHROUGH = CONTACT + ["category"]
+_PASSTHROUGH = CONTACT + [
+    "category",
+    "product_name", "product_desc", "description",
+    "cat_1_ID", "cat_1_name", "cat_2_ID", "cat_2_name",
+]
 
 
 def _guess_dayfirst(txt: pd.Series) -> bool:
@@ -263,6 +267,13 @@ def load_eshop(path: str = "data/bq_export.csv") -> pd.DataFrame:
     df["quantity"] = df["quantity"].fillna(0)
     df["unit_price"] = df["unit_price"].fillna(0)
     out = df.reset_index(drop=True)
+    try:
+        from seg.catalog import fill_missing as _fill_missing, enrich as _enrich_catalog
+        cat = _fill_missing(out, key_col="product")
+        if cat is not None:
+            out = _enrich_catalog(out, cat, key_col="product")
+    except Exception as e:
+        print(f"  [catalog enrich skipped: {e}]")
     out.attrs["ingest"] = {"rows_in": int(rows_in), "rows_kept": int(len(out)),
                            "dropped": dropped}
     return out
