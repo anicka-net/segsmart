@@ -178,25 +178,49 @@ def main():
     print(f"  attention-clusters vs raw-KMeans: {adjusted_rand_score(base_lbl, att_lbl):+.3f}")
 
     # --- the payoff KMeans can't give: a lookalike graph ---
-    Zn = Z / (np.linalg.norm(Z, axis=1, keepdims=True) + 1e-9)
+    # ...but does the trained net actually beat plain cosine-kNN on the raw
+    # scaled features?  If the neighbourhoods match, the transformer (and all of
+    # torch) is dead weight for THIS use-case and the feature is ~5 lines of numpy.
+    def topk(space, anchor, k=8):
+        sn = space / (np.linalg.norm(space, axis=1, keepdims=True) + 1e-9)
+        s = sn @ sn[anchor]; s[anchor] = -1
+        return np.argsort(-s)[:k], s
+
+    show = ["recency", "frequency", "monetary", "avg_order_value", "segment"]
     champ_idx = feat.index[feat["segment"] == "Champions"].tolist()
     if champ_idx:
         anchor = champ_idx[0]
-        sims = Zn @ Zn[anchor]
-        sims[anchor] = -1
-        top = np.argsort(-sims)[:8]
-        show = ["recency", "frequency", "monetary", "avg_order_value", "segment"]
+        emb_top, emb_s = topk(Z, anchor)
         print(f"\nlookalikes of one Champion (customer #{anchor}) by embedding cosine:")
         print("  cos   " + "  ".join(f"{c:>13}" for c in show))
-        for j in top:
+        for j in emb_top:
             vals = "  ".join(f"{feat.iloc[j][c]:>13.1f}" if c != "segment"
                              else f"{feat.iloc[j][c]:>13}" for c in show)
-            print(f"  {sims[j]:.3f}  {vals}")
-        same = sum(feat.iloc[j]["segment"] == "Champions" for j in top)
-        print(f"  -> {same}/8 nearest are themselves Champions "
-              f"(sanity: a good similarity space keeps like with like)")
+            print(f"  {emb_s[j]:.3f}  {vals}")
+        same = sum(feat.iloc[j]["segment"] == "Champions" for j in emb_top)
+        print(f"  -> {same}/8 nearest are themselves Champions")
 
-    print("\nverdict: see whether silhouette moved and whether lookalikes read sensibly.")
+        # the decisive ablation: attention-embeds vs plain cosine-kNN on raw X.
+        # overlap = do they agree?  purity = which one keeps like-with-like better?
+        seg = feat["segment"].to_numpy()
+        sample = champ_idx[:50] if len(champ_idx) >= 50 else champ_idx
+        jac, pur_e, pur_r = [], [], []
+        for a in sample:
+            e, _ = topk(Z, a); r, _ = topk(X, a)
+            jac.append(len(set(e.tolist()) & set(r.tolist())) /
+                       len(set(e.tolist()) | set(r.tolist())))
+            pur_e.append(np.mean(seg[e] == "Champions"))
+            pur_r.append(np.mean(seg[r] == "Champions"))
+        print(f"\n[ablation] over {len(sample)} Champions, top-8 lookalikes:")
+        print(f"  agreement (Jaccard)            : {np.mean(jac):.2f}  "
+              f"(low => the net picks DIFFERENT neighbours than raw cosine)")
+        print(f"  Champion-purity, attention-kNN : {np.mean(pur_e):.2f}")
+        print(f"  Champion-purity, raw cosine-kNN: {np.mean(pur_r):.2f}")
+        better = ("attention earns its keep" if np.mean(pur_e) > np.mean(pur_r) + 0.03
+                  else "raw cosine-kNN ties/wins => drop torch, ship ~5 lines of sklearn")
+        print(f"  -> {better}")
+
+    print("\nverdict: read silhouette + the ablation (agreement + purity).")
 
 
 if __name__ == "__main__":
