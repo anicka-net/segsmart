@@ -207,7 +207,15 @@ def load_csv(path: str, mapping: dict | None = None, decimal: str = ".",
     from seg.sniff import read_table                  # local import: no cycle
     with open(path, "rb") as f:
         raw, _info = read_table(f.read(), filename=path)
-    return load_dataframe(raw, mapping, decimal)
+    out = load_dataframe(raw, mapping, decimal)
+    try:
+        from seg.catalog import fill_missing as _fill_missing, enrich as _enrich_catalog
+        cat = _fill_missing(out, key_col="product")
+        if cat is not None:
+            out = _enrich_catalog(out, cat, key_col="product")
+    except Exception as e:
+        print(f"  [catalog enrich skipped: {e}]")
+    return out
 
 
 def _czk(s: pd.Series) -> pd.Series:
