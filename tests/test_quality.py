@@ -107,7 +107,7 @@ def test_migration_none_on_first_run_then_tracks_moves(tmp_path):
     assert mig["entered"] == 1 and mig["left"] == 0
     snaps = list((tmp_path / "history").glob("segments-*.json"))
     assert len(snaps) == 2
-    assert "segments" in json.load(open(snaps[0]))
+    assert "segments" in json.load(open(snaps[0], encoding="utf-8"))
 
 
 def test_adhoc_run_leaves_no_history(tmp_path, monkeypatch):

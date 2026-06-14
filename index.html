@@ -11,9 +11,10 @@
     --mut:#a9a7d4; --line:#403a86;
     --teal:#2dd4bf; --purple:#a78bfa; --amber:#f59e0b; --lime:#84cc16; --red:#f87171;
     --good:#34d399;
+    --grad-from:#1a163f; --grad-to:#241f57; --overlay:rgba(10,8,30,.66); --btn-fg:#06281f;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(160deg,#1a163f,#241f57);color:var(--ink);
+  body{margin:0;background:linear-gradient(160deg,var(--grad-from),var(--grad-to));color:var(--ink);
        font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1180px;margin:0 auto;padding:22px}
   header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
@@ -68,7 +69,7 @@
   .val b{font-size:20px;font-variant-numeric:tabular-nums}
   .val small{color:var(--mut);display:block;font-size:11.5px}
   .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
-  button{background:var(--teal);color:#06281f;border:0;padding:9px 16px;border-radius:9px;font-weight:700;cursor:pointer}
+  button{background:var(--teal);color:var(--btn-fg);border:0;padding:9px 16px;border-radius:9px;font-weight:700;cursor:pointer}
   button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
   input[type=file]{color:var(--mut);font-size:12.5px}
   label.cur{color:var(--mut);font-size:12.5px}
@@ -105,7 +106,7 @@
   .editform input,.editform textarea{width:100%;background:var(--panel2);color:var(--ink);
             border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:13px/1.45 inherit;resize:vertical}
   .editform textarea{min-height:54px}
-  .modal{position:fixed;inset:0;background:rgba(10,8,30,.66);backdrop-filter:blur(2px);
+  .modal{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(2px);
          display:none;align-items:center;justify-content:center;padding:22px;z-index:50}
   .modal.open{display:flex}
   .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;
@@ -160,6 +161,35 @@
     *{transition:none!important;animation:none!important}
     .camp:hover{transform:none}
   }
+
+  /* ---- Skins ---- */
+  [data-theme="obsidian"]{
+    --bg:#111113; --panel:#1c1c1f; --panel2:#242428; --ink:#f2f0ec;
+    --mut:#888580; --line:#2e2e32;
+    --teal:#f59e0b; --purple:#fb923c; --amber:#f59e0b; --lime:#fbbf24; --red:#f87171;
+    --good:#a3e635;
+    --grad-from:#0d0d0f; --grad-to:#161618; --overlay:rgba(5,5,7,.72); --btn-fg:#1a0f00;
+  }
+  [data-theme="forest"]{
+    --bg:#0f1a0f; --panel:#182818; --panel2:#1e3020; --ink:#e8f5e8;
+    --mut:#8aab8a; --line:#2a402a;
+    --teal:#4ade80; --purple:#86efac; --amber:#facc15; --lime:#84cc16; --red:#f87171;
+    --good:#34d399;
+    --grad-from:#0a140a; --grad-to:#121e12; --overlay:rgba(5,12,5,.72); --btn-fg:#052005;
+  }
+  [data-theme="arctic"]{
+    --bg:#e8f0f8; --panel:#ffffff; --panel2:#f1f5f9; --ink:#0f172a;
+    --mut:#64748b; --line:#cbd5e1;
+    --teal:#2563eb; --purple:#7c3aed; --amber:#d97706; --lime:#16a34a; --red:#dc2626;
+    --good:#16a34a;
+    --grad-from:#dde8f4; --grad-to:#e8f0f8; --overlay:rgba(15,23,42,.5); --btn-fg:#ffffff;
+  }
+
+  /* ---- Skin picker ---- */
+  .swatch{width:34px;height:34px;border-radius:50%;border:3px solid transparent;
+    cursor:pointer;padding:0;transition:border-color .12s,transform .1s}
+  .swatch.active,.swatch:hover{border-color:var(--ink);transform:scale(1.08)}
+  #skinbtn{font-size:15px;line-height:1;padding:7px 10px}
 </style>
 </head>
 <body>
@@ -170,6 +200,21 @@
     <div class="badge" data-i="badge">🔒 Data stays on this machine</div>
     <a class="nav" href="/setup" data-i="nav_setup">⚙ Data setup</a>
     <a class="nav" href="#" id="langtoggle" data-i-title="t_switch" title="UI language">🌐 CZ</a>
+    <div style="position:relative">
+      <button class="nav" id="skinbtn" data-i-aria-label="t_theme" aria-label="Switch theme">🎨</button>
+      <div id="skinmenu" style="display:none;position:absolute;right:0;top:calc(100%+6px);
+        background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;
+        gap:10px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.35)">
+        <button class="swatch" data-skin=""
+          style="background:radial-gradient(circle at 65% 35%,#2dd4bf 30%,#1e1b4b 32%)"></button>
+        <button class="swatch" data-skin="obsidian"
+          style="background:radial-gradient(circle at 65% 35%,#f59e0b 30%,#111113 32%)"></button>
+        <button class="swatch" data-skin="forest"
+          style="background:radial-gradient(circle at 65% 35%,#4ade80 30%,#0f1a0f 32%)"></button>
+        <button class="swatch" data-skin="arctic"
+          style="background:radial-gradient(circle at 65% 35%,#2563eb 30%,#e8f0f8 32%)"></button>
+      </div>
+    </div>
   </header>
   <div class="meta" id="meta">loading…</div>
 
@@ -289,7 +334,7 @@ en:{
   h_campaigns:'AI campaign suggestions', h_season:'Seasonality',
   h_validation:'Validation', since_last:'Since last run',
   b_export_seg:'Export segment CSV', b_export_all:'Export all customers', b_close:'Close',
-  t_switch:'Switch to Czech',
+  t_switch:'Switch to Czech', t_theme:'Switch theme',
   footer:'SegSmart · MBA Project 2026 · runs fully offline · RFM + KMeans + on-device LLM',
   f_setup:'data setup',
   meta:'{tx} transactions · {cu} customers · {or} orders · {from} → {to} · {co} countries · computed in {s}s',
@@ -373,7 +418,7 @@ cs:{
   h_campaigns:'Návrhy AI kampaní', h_season:'Sezónnost',
   h_validation:'Validace', since_last:'Od minulého běhu',
   b_export_seg:'Export segmentu (CSV)', b_export_all:'Export všech zákazníků', b_close:'Zavřít',
-  t_switch:'Přepnout do angličtiny',
+  t_switch:'Přepnout do angličtiny', t_theme:'Změnit motiv',
   footer:'SegSmart · MBA projekt 2026 · běží zcela offline · RFM + KMeans + lokální LLM',
   f_setup:'nastavení dat',
   meta:'{tx} transakcí · {cu} zákazníků · {or} objednávek · {from} → {to} · {co} zemí · spočteno za {s} s',
@@ -1103,6 +1148,31 @@ $('#langtoggle').onclick=(e)=>{
   localStorage.setItem('seg_ui_lang', uiLang);
   applyLang();
 };
+
+// ---- Skin picker ----
+const SKIN_KEY = 'ss_theme';
+const skinMenu = $('#skinmenu');
+const skinBtn = $('#skinbtn');
+
+function applySkin(id){
+  if(id) document.documentElement.dataset.theme = id;
+  else delete document.documentElement.dataset.theme;
+  localStorage.setItem(SKIN_KEY, id || '');
+  document.querySelectorAll('.swatch').forEach(s =>
+    s.classList.toggle('active', (s.dataset.skin || '') === (id || '')));
+}
+applySkin(localStorage.getItem(SKIN_KEY) || '');
+
+skinBtn.onclick = e => {
+  e.stopPropagation();
+  const open = skinMenu.style.display === 'flex';
+  skinMenu.style.display = open ? 'none' : 'flex';
+};
+document.addEventListener('click', () => { skinMenu.style.display = 'none'; });
+skinMenu.addEventListener('click', e => e.stopPropagation());
+document.querySelectorAll('.swatch').forEach(s => {
+  s.onclick = () => { applySkin(s.dataset.skin); skinMenu.style.display = 'none'; };
+});
 
 async function load(){
   try{ const r=await fetch('/api/result'); if(r.ok){ render(await r.json()); return; } }catch(e){}

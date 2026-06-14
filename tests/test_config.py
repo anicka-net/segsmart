@@ -28,7 +28,7 @@ def test_save_load_roundtrip(tmp_path):
     cfgmod.save_config(cfg, p)
     assert cfgmod.load_config(p) == cfg
     # the file is plain, hand-editable JSON
-    raw = json.loads(open(p).read())
+    raw = json.loads(open(p, encoding="utf-8").read())
     assert raw["output"]["currency"] == "Kč"
 
 
@@ -118,5 +118,5 @@ def test_run_config_no_source():
 def test_example_config_is_valid_json():
     here = os.path.join(os.path.dirname(__file__), "..", "config",
                         "segsmart.example.json")
-    cfg = json.load(open(here))
+    cfg = json.load(open(here, encoding="utf-8"))
     assert cfg["source"]["type"] in cfgmod.SOURCE_TYPES

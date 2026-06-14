@@ -28,7 +28,7 @@ def test_czk_uses_comma():
 def test_synth_matches_schema(tmp_path):
     out = tmp_path / "s.csv"
     generate(n_customers=50, seed=3, out=str(out))
-    with open(out) as f:
+    with open(out, encoding="utf-8") as f:
         rows = list(csv.reader(f))
     assert rows[0] == HEADER
     assert len(rows) > 100
@@ -42,6 +42,6 @@ def test_synth_matches_schema(tmp_path):
 def test_synth_customer_key_is_email(tmp_path):
     out = tmp_path / "s.csv"
     generate(n_customers=50, seed=5, out=str(out))
-    with open(out) as f:
+    with open(out, encoding="utf-8") as f:
         keys = [r["customer_key"] for r in csv.DictReader(f)]
     assert all("@" in k for k in keys)

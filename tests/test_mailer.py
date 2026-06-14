@@ -83,7 +83,7 @@ def test_build_mailing_contents():
 def test_save_mailing_writes_file(tmp_path):
     m = build_mailing(CARD, [{"id": "a@x.cz"}], lang="cs", currency="Kč")
     p = save_mailing(m, out_dir=str(tmp_path / "mailings"))
-    assert json.load(open(p))["segment"] == "Champions"
+    assert json.load(open(p, encoding="utf-8"))["segment"] == "Champions"
 
 
 def test_deliver_without_webhook_is_graceful():
@@ -122,7 +122,7 @@ def test_deliver_webhook_failure_does_not_raise():
 def test_atomic_write_json_roundtrip(tmp_path):
     p = str(tmp_path / "sub" / "x.json")
     atomic_write_json(p, {"a": "ě"})
-    assert json.load(open(p)) == {"a": "ě"}
+    assert json.load(open(p, encoding="utf-8")) == {"a": "ě"}
     leftovers = [f for f in (tmp_path / "sub").iterdir() if f.suffix == ".tmp"]
     assert not leftovers
 
