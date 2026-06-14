@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
 <title>SegSmart — local customer segmentation</title>
 <style>
   :root{
@@ -29,7 +30,7 @@
   .kpis{grid-template-columns:repeat(4,1fr)}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
   .kpi .lbl{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.6px}
-  .kpi .val{font-size:30px;font-weight:800;margin-top:6px;line-height:1}
+  .kpi .val{font-size:30px;font-weight:800;margin-top:6px;line-height:1;font-variant-numeric:tabular-nums}
   .kpi .note{color:var(--teal);font-size:12px;margin-top:8px}
   .two{grid-template-columns:1.15fr 1fr}
   .three{grid-template-columns:1fr 1fr}
@@ -57,14 +58,14 @@
               padding:7px 9px;background:var(--panel);border-radius:8px;border:1px solid var(--line)}
   .camp .det{color:var(--mut);font-size:12.5px}
   .camp .est{margin-top:7px;font-size:12.5px;color:var(--teal)}
-  .camp .src{position:absolute;right:12px;bottom:10px;font-size:10px;color:#7c79b8}
+  .camp .src{position:absolute;right:12px;bottom:10px;font-size:10px;color:#9b98d0}
   .season{display:flex;align-items:flex-end;gap:5px;height:120px}
   .mcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;height:100%}
   .mcol .mb{width:100%;border-radius:4px 4px 0 0;background:var(--purple);min-height:2px}
   .mcol.peak .mb{background:var(--teal)}
   .mcol .ml{font-size:10px;color:var(--mut)}
   .valrow{display:flex;gap:26px;flex-wrap:wrap}
-  .val b{font-size:20px}
+  .val b{font-size:20px;font-variant-numeric:tabular-nums}
   .val small{color:var(--mut);display:block;font-size:11.5px}
   .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
   button{background:var(--teal);color:#06281f;border:0;padding:9px 16px;border-radius:9px;font-weight:700;cursor:pointer}
@@ -73,7 +74,7 @@
   label.cur{color:var(--mut);font-size:12.5px}
   select{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:5px}
   .hint{color:var(--mut);font-size:12px;margin-top:8px}
-  .foot{color:#7c79b8;font-size:11.5px;text-align:center;margin:22px 0 6px}
+  .foot{color:#9b98d0;font-size:11.5px;text-align:center;margin:22px 0 6px}
   #status{font-size:12.5px;color:var(--amber)}
   .insight{background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.3);border-radius:12px;
            padding:12px 16px;font-size:13.5px;margin-top:4px}
@@ -126,7 +127,7 @@
   .modal .estbox{background:var(--panel2);border-radius:12px;padding:12px 14px;font-size:13px}
   .modal .estbox .big{font-size:24px;font-weight:800;color:var(--teal);margin-bottom:4px}
   .modal .formula{color:var(--mut);font-size:12px;margin-top:8px;font-family:ui-monospace,Consolas,monospace}
-  .modal .note{color:#7c79b8;font-size:11.5px;margin-top:16px}
+  .modal .note{color:#9b98d0;font-size:11.5px;margin-top:16px}
   .drv{display:flex;flex-direction:column;gap:8px;margin-top:4px}
   .drv .row{display:flex;align-items:center;gap:10px;font-size:13px}
   .drv .nm{min-width:130px;font-weight:600}
@@ -135,7 +136,7 @@
   .drv .fill.up{background:var(--good)} .drv .fill.down{background:var(--red)}
   .drv .vv{min-width:96px;text-align:right;color:var(--mut);font-variant-numeric:tabular-nums}
   .drv .tag{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
-  .drvsrc{color:#7c79b8;font-size:11.5px;margin-top:10px}
+  .drvsrc{color:#9b98d0;font-size:11.5px;margin-top:10px}
   .upload{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
   .upload .lbl{font-size:12.5px;color:var(--mut);margin-bottom:8px}
   .upload .ctl{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
@@ -145,6 +146,20 @@
   .bub-gridline{stroke:var(--line);stroke-width:1;opacity:.5}
   .bub-circle{transition:opacity .12s,r .12s;cursor:pointer}
   .bub-circle:hover{opacity:1!important}
+  @media (max-width:760px){
+    .wrap{padding:14px}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .two,.three{grid-template-columns:1fr}
+    .kpi .val{font-size:24px}
+    .donutrow{flex-direction:column;align-items:flex-start}
+    .valrow{gap:16px}
+    .modal{padding:12px}
+    .modal .row{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    .camp:hover{transform:none}
+  }
 </style>
 </head>
 <body>
@@ -205,7 +220,9 @@
   </div>
 
   <div class="card" id="prospectcard" style="display:none;margin-top:16px">
-    <h3 id="prospecthdr" onclick="toggleProspects()" style="cursor:pointer;user-select:none">
+    <h3 id="prospecthdr" onclick="toggleProspects()" role="button" tabindex="0"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleProspects()}"
+        style="cursor:pointer;user-select:none">
       <span id="prospectcaret" style="display:inline-block;width:1em">▸</span><span data-i="h_prospects">Grow your best segment</span> <span class="sub" id="prospecttag"></span></h3>
     <div id="prospectbody" style="display:none">
       <div class="hint" data-i="prospects_hint">Customers who shop like your best segment but aren’t in it yet — a ready shortlist to win over. Worked out privately on this machine.</div>
@@ -240,7 +257,7 @@
   </div>
 
   <div class="foot"><span data-i="footer">SegSmart · MBA Project 2026 · runs fully offline · RFM + KMeans + on-device LLM</span>
-    · <a href="/setup" style="color:#7c79b8" data-i="f_setup">data setup</a></div>
+    · <a href="/setup" style="color:#9b98d0" data-i="f_setup">data setup</a></div>
 </div>
 
 <div id="mixtip" style="position:fixed;display:none;background:var(--panel);border:1px solid var(--line);
@@ -599,8 +616,16 @@ function render(r){
     `<text x="${CX}" y="${CY-4}" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">${segs.length}</text>`+
     `<text x="${CX}" y="${CY+16}" text-anchor="middle" font-size="11" fill="#a9a7d4">${t('seg_word')}</text>`;
   $('#legend').innerHTML = segs.map(s=>
-    `<div data-seg="${esc(s.name)}" title="${t('legend_tip')}"><span class="dot" style="background:${s.color}"></span>${esc(segName(s.name))}<span class="pc">${fmtDec(s.share_pct)} %</span></div>`).join('');
-  document.querySelectorAll('#legend div').forEach(el=>el.onclick=()=>drill(r, el.dataset.seg));
+    `<div data-seg="${esc(s.name)}" role="button" tabindex="0" aria-label="${esc(segName(s.name))} ${fmtDec(s.share_pct)} % — ${t('legend_tip')}" title="${t('legend_tip')}"><span class="dot" style="background:${s.color}"></span>${esc(segName(s.name))}<span class="pc">${fmtDec(s.share_pct)} %</span></div>`).join('');
+  document.querySelectorAll('#legend div').forEach(el=>{
+    const go=()=>drill(r, el.dataset.seg);
+    el.onclick=go;
+    el.onkeydown=ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); go(); } };
+  });
+  // accessible text alternative for the donut chart (SVG is decorative to AT otherwise)
+  $('#donut').setAttribute('role','img');
+  $('#donut').setAttribute('aria-label',
+    t('h_segments')+': '+segs.map(s=>`${segName(s.name)} ${fmtDec(s.share_pct)} %`).join(', '));
 
   // honesty warnings (the tool says when the data can't support conclusions)
   const warns=(r.quality||{}).warnings||[];
@@ -635,6 +660,9 @@ function render(r){
       + `<div class="col" style="height:${h}px;background:${s.color}"></div>`
       + `<div class="cap">${esc(segName(s.name))}</div></div>`;
   }).join('');
+  $('#bars').setAttribute('role','img');
+  $('#bars').setAttribute('aria-label',
+    t('h_revenue')+': '+segs.map(s=>`${segName(s.name)} ${fmtMoney(s.revenue,c)}`).join(', '));
 
   renderCampaigns(r);
 
