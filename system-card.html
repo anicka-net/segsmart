@@ -58,6 +58,12 @@
         <td>Its clusters were <i>worse</i> (<span class="num">silhouette 0.18 vs 0.25</span>) and it needs PyTorch. RFM is already a clean feature space — nothing left for a net to learn.</td>
       </tr>
       <tr>
+        <td><b>Segmentation order</b></td>
+        <td class="chose">Readable RFM rules, KMeans as cross-check</td>
+        <td>Discover-first → supervised tree on top (let the data choose <i>k</i>, then explain it)</td>
+        <td>The methodologically pure order, so we ran it. It <i>validated</i> the rules: on the clean set the data independently chose <span class="num">k=5</span> and a depth-3 tree reproduced <span class="num">99%</span> of the clusters (<span class="num">ARI 0.56</span>). We keep readable rules for the shop owner and use discover-first as the validation layer — it also surfaced a high-AOV "whale" sub-segment and showed frequency carries <span class="num">~0%</span> of the split.</td>
+      </tr>
+      <tr>
         <td><b>Lookalikes / prospects</b></td>
         <td class="chose">Cosine k-NN on the scaled RFM features</td>
         <td>Embeddings from the same attention encoder</td>
