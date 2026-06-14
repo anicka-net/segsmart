@@ -1012,6 +1012,10 @@ async function cardAction(act, i){
 
 async function doLaunch(i, cp, recipients, lang, cur, st, box){
     box.remove();
+    // re-filter at confirm time: another preview confirmed since this one was
+    // built may have already mailed some of these (overlapping campaigns).
+    recipients = recipients.filter(x=>!MAILED.has(x.id));
+    if(!recipients.length){ st.textContent=t('all_mailed'); return; }
     st.textContent=t('launching');
     try{
       const r=await fetch('/api/launch',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1154,14 +1158,16 @@ const SKIN_KEY = 'ss_theme';
 const skinMenu = $('#skinmenu');
 const skinBtn = $('#skinbtn');
 
-function applySkin(id){
+function applySkin(id, persist=true){
   if(id) document.documentElement.dataset.theme = id;
   else delete document.documentElement.dataset.theme;
-  localStorage.setItem(SKIN_KEY, id || '');
+  // storage can throw (private mode / disabled) — never let it wedge startup
+  if(persist){ try{ localStorage.setItem(SKIN_KEY, id || ''); }catch(e){} }
   document.querySelectorAll('.swatch').forEach(s =>
     s.classList.toggle('active', (s.dataset.skin || '') === (id || '')));
 }
-applySkin(localStorage.getItem(SKIN_KEY) || '');
+let _savedSkin=''; try{ _savedSkin=localStorage.getItem(SKIN_KEY) || ''; }catch(e){}
+applySkin(_savedSkin, false);   // initial apply must not persist
 
 skinBtn.onclick = e => {
   e.stopPropagation();
